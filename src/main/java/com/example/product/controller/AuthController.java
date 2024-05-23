@@ -5,6 +5,7 @@ import com.example.product.auth.JwtUserDetailsService;
 import com.example.product.auth.model.JwtRequest;
 import com.example.product.auth.model.JwtResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,7 +16,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
+@Slf4j
 @RestController
 @CrossOrigin
 public class AuthController {
@@ -32,15 +33,18 @@ public class AuthController {
 
     @PostMapping("/authenticate")
     public ResponseEntity<JwtResponse> createAuthenticationToken(@RequestBody @Valid JwtRequest authenticationRequest) {
+        log.info("Authentication for user: {}",authenticationRequest.getUsername());
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
         } catch (AuthenticationException e) {
+            log.error("Authentication failed: {}",e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot be authenticated:" +e.getMessage());
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
         final String token = jwtTokenUtil.generateToken(userDetails);
 
+        log.info("Authentication done, token generated");
         return ResponseEntity.ok(new JwtResponse(token));
     }
 
